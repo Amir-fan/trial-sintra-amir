@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
-import { SocialMediaPost } from "./types";
+import { SocialMediaPost, ImageInsights } from "./types";
 
 let client: OpenAI | null = null;
 
@@ -117,5 +117,51 @@ export async function callOpenAI(prompt: string): Promise<SocialMediaPost[]> {
     }
     
     throw new Error('Failed to generate posts: ' + (error instanceof Error ? error.message : 'Unknown error'));
+  }
+}
+
+// Analyze an image using GPT-4o vision and return concise insights
+export async function analyzeImage(
+  imageBase64: string,
+  mimeType: string
+): Promise<ImageInsights> {
+  const client = getClient();
+
+  // Build a data URL so we don't need public hosting
+  const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+
+  const prompt = `You are an expert product photography analyst.
+Return strict JSON with keys: summary (one sentence), tags (array of 3-6 short visual tags), altText (concise accessibility text).`;
+
+  try {
+    const response = await client.chat.completions.create({
+      model: process.env.OPENAI_MODEL || "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: dataUrl } as any },
+          ] as any,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 300,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error("No content from vision response");
+
+    const parsed = JSON.parse(content);
+    return {
+      summary: String(parsed.summary || ""),
+      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 6).map((t: any) => String(t)) : [],
+      altText: String(parsed.altText || "Product image"),
+    };
+  } catch (error) {
+    console.error("Vision analysis error:", error);
+    // Fail soft with minimal empty insights to keep flow working
+    return { summary: "", tags: [], altText: "Product image" };
   }
 }

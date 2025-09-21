@@ -53,7 +53,11 @@ console.log('🔑 OPENAI_API_KEY starts with:', process.env.OPENAI_API_KEY ? pro
 import express, { Request, Response } from "express";
 import cors from "cors";
 import { generateSocialMediaPosts } from "./generate";
-import { Product } from "./types";
+import { analyzeImage } from "./openai";
+import type { Product } from "./types";
+import multer from "multer";
+import { WebResearchService } from "./webResearch";
+import { SchedulingService } from "./scheduling";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -92,6 +96,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '10mb' }));
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 // Request logging middleware
 app.use((req: Request, res: Response, next: any) => {
@@ -173,7 +181,7 @@ function validateProduct(product: any): { isValid: boolean; errors: string[]; va
 // Generate social media posts
 app.post("/api/generate", async (req: Request, res: Response) => {
   try {
-    const { product } = req.body;
+    const { product, options } = req.body;
     
     // Validate input
     const validation = validateProduct(product);
@@ -190,7 +198,7 @@ app.post("/api/generate", async (req: Request, res: Response) => {
       setTimeout(() => reject(new Error('Request timeout')), 30000)
     );
     
-    const postsPromise = generateSocialMediaPosts(validation.validatedProduct!);
+    const postsPromise = generateSocialMediaPosts(validation.validatedProduct!, options || {});
     
     const posts = await Promise.race([postsPromise, timeoutPromise]) as any[];
     
@@ -225,6 +233,110 @@ app.post("/api/generate", async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal server error',
       message: 'An unexpected error occurred while generating posts.',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Image analysis endpoint (in-memory upload)
+app.post('/api/upload-image', upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+    const mime = file.mimetype;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(mime)) {
+      return res.status(400).json({ error: 'Unsupported image type' });
+    }
+    const base64 = file.buffer.toString('base64');
+    const insights = await analyzeImage(base64, mime);
+    res.json({ insights });
+  } catch (err) {
+    console.error('upload-image error:', err);
+    res.status(500).json({ error: 'Failed to analyze image' });
+  }
+});
+
+// Web research endpoint
+app.post('/api/research', async (req: Request, res: Response) => {
+  try {
+    const { query, maxResults = 5 } = req.body;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Query is required' });
+    }
+
+    const webResearch = new WebResearchService(process.env.OPENAI_API_KEY || '');
+    const researchData = await webResearch.searchWeb(query, maxResults);
+    
+    res.json({
+      success: true,
+      data: researchData,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Web research error:', error);
+    res.status(500).json({
+      error: 'Web research failed',
+      message: 'Unable to perform web research at this time',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Content calendar generation endpoint
+app.post('/api/calendar', async (req: Request, res: Response) => {
+  try {
+    const { posts, startDate, timezone = 'UTC' } = req.body;
+    
+    if (!posts || !Array.isArray(posts)) {
+      return res.status(400).json({ error: 'Posts array is required' });
+    }
+
+    const scheduler = new SchedulingService(timezone);
+    const calendar = scheduler.generateContentCalendar(posts, startDate);
+    
+    res.json({
+      success: true,
+      calendar,
+      timezone,
+      generatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Calendar generation error:', error);
+    res.status(500).json({
+      error: 'Calendar generation failed',
+      message: 'Unable to generate content calendar',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Optimal posting times endpoint
+app.get('/api/optimal-times/:platform', (req: Request, res: Response) => {
+  try {
+    const { platform } = req.params;
+    const { timezone = 'UTC' } = req.query;
+    
+    if (!['twitter', 'instagram', 'linkedin'].includes(platform)) {
+      return res.status(400).json({ error: 'Invalid platform' });
+    }
+
+    const scheduler = new SchedulingService(timezone as string);
+    const optimalTimes = scheduler.getOptimalTimes(platform as any);
+    
+    res.json({
+      success: true,
+      platform,
+      optimalTimes,
+      timezone,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Optimal times error:', error);
+    res.status(500).json({
+      error: 'Failed to get optimal times',
       timestamp: new Date().toISOString()
     });
   }

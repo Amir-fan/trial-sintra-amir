@@ -11,6 +11,15 @@ A modern web application that transforms product descriptions into engaging soci
 - **Copy-to-Clipboard**: Easy copying of individual posts or all posts at once
 - **Platform Previews**: See how posts will look on each social media platform with authentic branding
 
+### 🆕 Enhanced Features (Full-Stack Implementation)
+- **📸 Image Analysis**: Upload product images for AI-powered visual analysis and content enhancement
+- **🔍 Web Research**: Real-time market research using OpenAI's Responses API for data-driven content
+- **📅 Content Calendar**: 7-day posting schedule with optimal timing recommendations
+- **⏰ Post Scheduling**: Intelligent scheduling with platform-specific optimal times
+- **🎨 Brand Voice Customization**: Choose from 5 different brand voices (friendly, luxury, playful, clinical, casual)
+- **🌍 Timezone Support**: Schedule posts across different timezones
+- **📊 Market Insights**: Get trending topics, competitor analysis, and sentiment data
+
 ### User Experience
 - **Stunning Visual Design**: Modern gradient theme with glassmorphism effects
 - **Astronaut Mascots**: Integrated Soshie AI astronaut characters throughout the interface
@@ -168,7 +177,7 @@ npm run dev
 ## 🔧 API Endpoints
 
 ### POST /api/generate
-Generates social media posts for a given product.
+Generates social media posts for a given product with enhanced features.
 
 **Request Body:**
 ```json
@@ -178,6 +187,14 @@ Generates social media posts for a given product.
     "description": "Revolutionary reusable water bottle...",
     "price": 49.99,
     "category": "Health & Wellness"
+  },
+  "options": {
+    "imageBase64": "base64_encoded_image_data",
+    "imageMimeType": "image/png",
+    "researchQuery": "sustainable water bottles market trends",
+    "voice": "friendly",
+    "schedulePosts": true,
+    "timezone": "America/New_York"
   }
 }
 ```
@@ -192,10 +209,40 @@ Generates social media posts for a given product.
       "content": "🚀 Introducing EcoBottle Pro..."
     }
   ],
+  "imageInsights": {
+    "summary": "Modern water bottle with sleek design",
+    "tags": ["sustainable", "modern", "portable"],
+    "altText": "EcoBottle Pro water bottle"
+  },
+  "researchInsights": {
+    "bullets": ["Market growing 15% annually", "Sustainability is key trend"]
+  },
+  "scheduledPosts": [
+    {
+      "id": "post_1234567890_abc123",
+      "platform": "twitter",
+      "content": "🚀 Introducing EcoBottle Pro...",
+      "scheduledTime": "2025-01-22T09:00:00.000Z",
+      "timezone": "America/New_York",
+      "status": "pending"
+    }
+  ],
   "generated_at": "2025-01-21T02:30:00.000Z",
   "count": 5
 }
 ```
+
+### POST /api/upload-image
+Analyzes uploaded product images using OpenAI Vision API.
+
+### POST /api/research
+Performs web research using OpenAI's Responses API.
+
+### POST /api/calendar
+Generates 7-day content calendar with optimal posting times.
+
+### GET /api/optimal-times/:platform
+Gets optimal posting times for specific platforms.
 
 ## 🛡️ Validation Rules
 
@@ -242,6 +289,8 @@ trial-sintra-amir/
 │   │   ├── server.ts     # Express server setup
 │   │   ├── generate.ts   # Post generation logic
 │   │   ├── openai.ts     # OpenAI API integration
+│   │   ├── webResearch.ts # Web research service
+│   │   ├── scheduling.ts # Content scheduling service
 │   │   ├── types.ts      # TypeScript type definitions
 │   │   └── config.ts     # Configuration constants
 │   └── package.json
@@ -252,9 +301,20 @@ trial-sintra-amir/
 │   │   │   └── layout.tsx
 │   │   └── api.ts        # API client functions
 │   └── package.json
-└── docs/
-    └── LOG.md           # Development log
+├── docs/
+│   ├── LOG.md           # Development log
+│   └── TROUBLESHOOTING.md # Issue resolution guide
+├── FEATURES.md          # Detailed feature documentation
+├── IMPLEMENTATION_SUMMARY.md # Complete implementation overview
+└── APPROACH.md          # Development approach and decisions
 ```
+
+## 📚 Documentation
+
+- **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Complete overview of what we built and why
+- **[FEATURES.md](./FEATURES.md)** - Detailed technical documentation of all features
+- **[APPROACH.md](./APPROACH.md)** - Development approach and technical decisions
+- **[docs/LOG.md](./docs/LOG.md)** - Complete development timeline and commit history
 
 ## 🔄 Development Workflow
 

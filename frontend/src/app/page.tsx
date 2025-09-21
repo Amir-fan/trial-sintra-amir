@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { generatePosts } from "../api";
+import { useState, useRef } from "react";
+import { generatePosts, uploadImage, performWebResearch, generateContentCalendar, getOptimalTimes } from "../api";
 
 interface Product {
   name: string;
@@ -13,6 +13,33 @@ interface Product {
 interface SocialMediaPost {
   platform: "twitter" | "instagram" | "linkedin";
   content: string;
+}
+
+interface ImageInsights {
+  summary: string;
+  tags: string[];
+  altText: string;
+}
+
+interface ResearchInsights {
+  bullets: string[];
+}
+
+interface ScheduledPost {
+  id: string;
+  platform: "twitter" | "instagram" | "linkedin";
+  content: string;
+  scheduledTime: string;
+  timezone: string;
+  status: 'pending' | 'published' | 'failed';
+}
+
+interface CalendarDay {
+  day: number;
+  date: string;
+  dayName: string;
+  posts: SocialMediaPost[];
+  recommendedTimes: number[];
 }
 
 const PLATFORM_ICONS = {
@@ -56,6 +83,21 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  
+  // New feature states
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imageInsights, setImageInsights] = useState<ImageInsights | null>(null);
+  const [researchQuery, setResearchQuery] = useState<string>("");
+  const [researchInsights, setResearchInsights] = useState<ResearchInsights | null>(null);
+  const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
+  const [contentCalendar, setContentCalendar] = useState<CalendarDay[]>([]);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [brandVoice, setBrandVoice] = useState<'friendly' | 'luxury' | 'playful' | 'clinical' | 'casual'>('friendly');
+  const [timezone, setTimezone] = useState<string>('UTC');
+  const [isResearching, setIsResearching] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateInput = (): boolean => {
     const errors: Record<string, string> = {};
@@ -94,10 +136,30 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     setPosts([]);
+    setScheduledPosts([]);
+    setContentCalendar([]);
     
     try {
-      const result = await generatePosts(product);
+      const options = {
+        imageBase64: selectedImage ? await fileToBase64(selectedImage) : undefined,
+        imageMimeType: selectedImage?.type,
+        researchQuery: researchQuery || undefined,
+        voice: brandVoice,
+        schedulePosts: true,
+        timezone
+      };
+      
+      const result = await generatePosts(product, options);
       setPosts(result.posts);
+      setImageInsights(result.imageInsights || null);
+      setResearchInsights(result.researchInsights || null);
+      setScheduledPosts(result.scheduledPosts || []);
+      
+      // Generate content calendar
+      if (result.posts.length > 0) {
+        const calendarResult = await generateContentCalendar(result.posts, undefined, timezone);
+        setContentCalendar(calendarResult.calendar);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
@@ -112,6 +174,75 @@ export default function Home() {
     } catch (err) {
       console.error('Failed to copy to clipboard:', err);
     }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data:image/...;base64, prefix
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      setError('Image size must be less than 5MB');
+      return;
+    }
+
+    setSelectedImage(file);
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      const insights = await uploadImage(file);
+      setImageInsights(insights);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze image');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleWebResearch = async () => {
+    if (!researchQuery.trim()) return;
+
+    setIsResearching(true);
+    setError(null);
+
+    try {
+      const result = await performWebResearch(researchQuery);
+      setResearchInsights({ bullets: result.data.insights });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Web research failed');
+    } finally {
+      setIsResearching(false);
+    }
+  };
+
+  const formatScheduledTime = (scheduledTime: string) => {
+    const date = new Date(scheduledTime);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   return (
@@ -307,6 +438,134 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Enhanced Features Section */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Enhanced Features</h2>
+            <p className="text-gray-600 text-lg">Add images, research, and customize your content</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Image Upload Section */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">📸 Product Image Analysis</h3>
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-colors">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50"
+                >
+                  {isUploading ? 'Analyzing Image...' : 'Upload Product Image'}
+                </button>
+                <p className="text-sm text-gray-500 mt-2">PNG, JPG, WebP up to 5MB</p>
+              </div>
+              
+              {selectedImage && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-green-800 font-medium">✓ {selectedImage.name} uploaded</p>
+                </div>
+              )}
+
+              {imageInsights && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-900 mb-2">Image Analysis:</h4>
+                  <p className="text-blue-800 text-sm mb-2">{imageInsights.summary}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {imageInsights.tags.map((tag, index) => (
+                      <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Web Research Section */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">🔍 Market Research</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={researchQuery}
+                  onChange={(e) => setResearchQuery(e.target.value)}
+                  placeholder="e.g., 'sustainable water bottles market trends'"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-100"
+                  disabled={isResearching}
+                />
+                <button
+                  onClick={handleWebResearch}
+                  disabled={isResearching || !researchQuery.trim()}
+                  className="w-full py-3 px-6 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-semibold hover:from-indigo-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50"
+                >
+                  {isResearching ? 'Researching...' : 'Research Market'}
+                </button>
+              </div>
+
+              {researchInsights && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-purple-900 mb-2">Market Insights:</h4>
+                  <ul className="space-y-1">
+                    {researchInsights.bullets.map((insight, index) => (
+                      <li key={index} className="text-purple-800 text-sm flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Brand Voice and Settings */}
+          <div className="mt-8 grid md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Brand Voice
+              </label>
+              <select
+                value={brandVoice}
+                onChange={(e) => setBrandVoice(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-100"
+              >
+                <option value="friendly">Friendly & Approachable</option>
+                <option value="luxury">Luxury & Premium</option>
+                <option value="playful">Playful & Fun</option>
+                <option value="clinical">Clinical & Professional</option>
+                <option value="casual">Casual & Relaxed</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Timezone
+              </label>
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-100"
+              >
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">Eastern Time</option>
+                <option value="America/Chicago">Central Time</option>
+                <option value="America/Denver">Mountain Time</option>
+                <option value="America/Los_Angeles">Pacific Time</option>
+                <option value="Europe/London">London</option>
+                <option value="Europe/Paris">Paris</option>
+                <option value="Asia/Tokyo">Tokyo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <button
@@ -401,6 +660,129 @@ export default function Home() {
                     <p className="text-gray-800 whitespace-pre-wrap leading-relaxed text-sm">
                       {post.content}
                     </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Content Calendar Section */}
+        {contentCalendar.length > 0 && (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Content Calendar</h2>
+              <p className="text-gray-600 text-lg">Your 7-day posting schedule with optimal timing</p>
+            </div>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {contentCalendar.map((day, index) => (
+                <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+                  <div className="text-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-900">{day.dayName}</h3>
+                    <p className="text-gray-600">{day.date}</p>
+                    <div className="mt-2">
+                      <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                        {day.posts.length} posts
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {day.posts.length > 0 && (
+                    <div className="space-y-3">
+                      {day.posts.map((post, postIndex) => (
+                        <div key={postIndex} className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <div className={`p-1 rounded ${PLATFORM_COLORS[post.platform]}`}>
+                                {PLATFORM_ICONS[post.platform]}
+                              </div>
+                              <span className="text-sm font-medium text-gray-700">
+                                {PLATFORM_NAMES[post.platform]}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => copyToClipboard(post.content)}
+                              className="text-gray-400 hover:text-gray-600"
+                              title="Copy to clipboard"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            </button>
+                          </div>
+                          <p className="text-sm text-gray-600 line-clamp-3">{post.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {day.recommendedTimes.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <p className="text-xs text-gray-500 mb-2">Recommended times:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {day.recommendedTimes.map((time, timeIndex) => (
+                          <span key={timeIndex} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                            {time}:00
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Scheduled Posts Section */}
+        {scheduledPosts.length > 0 && (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Scheduled Posts</h2>
+              <p className="text-gray-600 text-lg">Posts ready for publishing with optimal timing</p>
+            </div>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {scheduledPosts.map((scheduledPost) => (
+                <div key={scheduledPost.id} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg ${PLATFORM_COLORS[scheduledPost.platform]}`}>
+                        {PLATFORM_ICONS[scheduledPost.platform]}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg">{PLATFORM_NAMES[scheduledPost.platform]}</h3>
+                        <p className="text-sm text-gray-600">{formatScheduledTime(scheduledPost.scheduledTime)}</p>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      scheduledPost.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      scheduledPost.status === 'published' ? 'bg-green-100 text-green-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {scheduledPost.status}
+                    </span>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <p className="text-gray-800 whitespace-pre-wrap leading-relaxed text-sm">
+                      {scheduledPost.content}
+                    </p>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => copyToClipboard(scheduledPost.content)}
+                      className="flex-1 py-2 px-4 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
+                    >
+                      Copy Content
+                    </button>
+                    <button
+                      className="flex-1 py-2 px-4 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
+                    >
+                      Schedule Now
+                    </button>
                   </div>
                 </div>
               ))}
