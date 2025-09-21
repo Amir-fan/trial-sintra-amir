@@ -29,7 +29,7 @@ export const ScheduledPosts: React.FC<ScheduledPostsProps> = ({ scheduledPosts }
   if (scheduledPosts.length === 0) return null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 mt-16">
       <div className="text-center">
         <h2 className="text-4xl font-bold text-gray-900 mb-4">Scheduled Posts</h2>
         <p className="text-gray-600 text-lg">Posts ready for publishing with optimal timing</p>

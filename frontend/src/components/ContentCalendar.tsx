@@ -29,7 +29,7 @@ export const ContentCalendar: React.FC<ContentCalendarProps> = ({ calendar }) =>
   if (calendar.length === 0) return null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 mt-16">
       <div className="text-center">
         <h2 className="text-4xl font-bold text-gray-900 mb-4">Content Calendar</h2>
         <p className="text-gray-600 text-lg">Your 7-day posting schedule with optimal timing</p>

@@ -205,9 +205,17 @@ export default function Home() {
             </div>
           )}
 
-          <PostsDisplay posts={posts} />
-          <ContentCalendar calendar={contentCalendar} />
-          <ScheduledPosts scheduledPosts={scheduledPosts} />
+          <div className="mb-16">
+            <PostsDisplay posts={posts} />
+          </div>
+          
+          <div className="mb-16">
+            <ContentCalendar calendar={contentCalendar} />
+          </div>
+          
+          <div className="mb-16">
+            <ScheduledPosts scheduledPosts={scheduledPosts} />
+          </div>
         </main>
       </div>
     </ErrorBoundary>
