@@ -36,10 +36,15 @@ export const EnhancedFeatures: React.FC<EnhancedFeaturesProps> = ({
   fileInputRef,
 }) => {
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 mb-12">
-      <div className="text-center mb-8">
+    <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 p-8 mb-16">
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl mb-6">
+          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Enhanced Features</h2>
-        <p className="text-gray-600 text-lg">Add images, research, and customize your content</p>
+        <p className="text-gray-600 text-lg max-w-2xl mx-auto">Add images, research, and customize your content to create more engaging social media posts</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">

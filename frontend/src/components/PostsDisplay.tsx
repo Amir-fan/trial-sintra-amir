@@ -29,10 +29,15 @@ export const PostsDisplay: React.FC<PostsDisplayProps> = ({ posts }) => {
   if (posts.length === 0) return null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div className="text-center">
-        <h2 className="text-4xl font-bold text-gray-900 mb-4">Your AI-Generated Posts</h2>
-        <p className="text-gray-600 text-lg">Ready to share across your social media platforms</p>
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl mb-6">
+          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 className="text-4xl font-bold text-gray-900 mb-4">AI-Generated Posts</h2>
+        <p className="text-gray-600 text-lg max-w-2xl mx-auto">Ready to share across your social media platforms</p>
       </div>
       
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">

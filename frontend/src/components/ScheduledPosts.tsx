@@ -29,10 +29,15 @@ export const ScheduledPosts: React.FC<ScheduledPostsProps> = ({ scheduledPosts }
   if (scheduledPosts.length === 0) return null;
 
   return (
-    <div className="space-y-8 mt-16">
+    <div className="space-y-10 mt-20">
       <div className="text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl mb-6">
+          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
         <h2 className="text-4xl font-bold text-gray-900 mb-4">Scheduled Posts</h2>
-        <p className="text-gray-600 text-lg">Posts ready for publishing with optimal timing</p>
+        <p className="text-gray-600 text-lg max-w-2xl mx-auto">Posts ready for publishing with optimal timing</p>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
