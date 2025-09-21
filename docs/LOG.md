@@ -181,6 +181,18 @@ This project transforms a single product description into platform-specific soci
 
 ---
 
+### Part 3: Critical Bug Fixes & Stabilization
+- **fix: resolve image upload functionality after refactoring**
+  - **Problem**: Image upload failing with "Failed to analyze image" error after architectural refactoring
+  - **Root Cause**: New OpenAIService class had different API key loading mechanism than original working code
+  - **Investigation**: Original openai.ts had robust .env file loading with multiple fallbacks and error handling
+  - **Solution**: Reverted to original working analyzeImage and callOpenAI functions while maintaining clean architecture
+  - **Technical Details**: 
+    - upload.ts: Changed from OpenAIService to analyzeImage import
+    - generate.ts: Changed from OpenAIService to callOpenAI/analyzeImage imports
+    - Preserved all other architectural improvements (routes, middleware, components)
+  - **Result**: Image upload functionality restored to working state with proven robust error handling
+
 ## Next Steps
 1. Set up environment variables
 2. Implement input validation

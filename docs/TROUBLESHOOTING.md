@@ -1,3 +1,31 @@
+## Image Upload Errors
+
+### Problem: "Failed to analyze image" Error
+**Symptoms:**
+- Image upload fails with "Failed to analyze image" error
+- Console shows API call to `/api/upload/image` returns 500 error
+- Works before refactoring, breaks after architectural changes
+
+**Root Cause:**
+- New OpenAIService class had different API key loading mechanism
+- Original openai.ts had robust .env file loading with multiple fallbacks
+- Refactoring broke the proven working image analysis functionality
+
+**Solution Applied:**
+- Reverted to original working `analyzeImage` function from `openai.ts`
+- Updated `upload.ts` and `generate.ts` to use original functions
+- Maintained clean architecture while using battle-tested code
+- Original code has comprehensive error handling and API key loading
+
+**Files Changed:**
+- `backend-ts/src/routes/upload.ts`: Changed from OpenAIService to analyzeImage import
+- `backend-ts/src/generate.ts`: Changed from OpenAIService to callOpenAI/analyzeImage imports
+
+**Result:**
+- Image upload functionality restored to working state
+- All other architectural improvements preserved
+- Robust error handling maintained
+
 ## Environment Variables (Windows)
 
 Symptoms:
