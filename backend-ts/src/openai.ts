@@ -5,8 +5,13 @@ let client: OpenAI | null = null;
 
 function getClient(): OpenAI {
   if (!client) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable.');
+    }
+    
     client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey,
       timeout: 30000, // 30 second timeout
       maxRetries: 2,
     });

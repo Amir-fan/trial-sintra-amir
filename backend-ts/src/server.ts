@@ -30,11 +30,16 @@ function validateEnvironment() {
 validateEnvironment();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json({ limit: '10mb' }));
 
 // Request logging middleware
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: any) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });

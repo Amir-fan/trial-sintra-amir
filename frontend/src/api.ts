@@ -25,8 +25,9 @@ interface ApiError {
 export async function generatePosts(
   product: Product
 ): Promise<GeneratePostsResponse> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/generate`,
+    `${apiUrl}/api/generate`,
     {
       method: "POST",
       headers: {

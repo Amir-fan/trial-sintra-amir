@@ -21,12 +21,25 @@ Description: ${product.description}
 Price: $${product.price}
 ${product.category ? `Category: ${product.category}` : ""}
 
-Format each post as:
-Platform: Content
+Create engaging social media posts for Twitter, Instagram, and LinkedIn. Use emojis and make them compelling.
 
-Include posts for Twitter, Instagram, and LinkedIn. Use emojis and make them engaging.
+Return the response as a JSON object with this exact structure:
+{
+  "posts": [
+    {
+      "platform": "twitter",
+      "content": "Your Twitter post content here"
+    },
+    {
+      "platform": "instagram", 
+      "content": "Your Instagram post content here"
+    },
+    {
+      "platform": "linkedin",
+      "content": "Your LinkedIn post content here"
+    }
+  ]
+}
 
-Return response as JSON object, where the key is "posts" and the value is an array of objects.
-Each object should have "platform" and "content" properties.
-`;
+Make sure each post is unique and tailored to the specific platform's audience and character limits.`;
 }
