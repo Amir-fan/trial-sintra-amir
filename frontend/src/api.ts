@@ -1,121 +1,44 @@
-interface Product {
-  name: string;
-  description: string;
-  price: number;
-  category?: string;
-}
+// API client for communicating with the backend
+import { 
+  Product, 
+  SocialMediaPost, 
+  GenerateOptions, 
+  ImageInsights, 
+  ResearchInsights, 
+  ScheduledPost, 
+  GeneratePostsResponse, 
+  WebResearchResponse, 
+  CalendarResponse,
+  ApiError
+} from './types';
 
-interface GenerateOptions {
-  imageBase64?: string;
-  imageMimeType?: string;
-  researchQuery?: string;
-  websiteUrl?: string;
-  voice?: 'friendly' | 'luxury' | 'playful' | 'clinical' | 'casual';
-  schedulePosts?: boolean;
-  timezone?: string;
-}
-
-interface SocialMediaPost {
-  platform: "twitter" | "instagram" | "linkedin";
-  content: string;
-}
-
-interface ImageInsights {
-  summary: string;
-  tags: string[];
-  altText: string;
-}
-
-interface ResearchInsights {
-  bullets: string[];
-}
-
-interface ScheduledPost {
-  id: string;
-  platform: "twitter" | "instagram" | "linkedin";
-  content: string;
-  scheduledTime: string;
-  timezone: string;
-  status: 'pending' | 'published' | 'failed';
-}
-
-interface GeneratePostsResponse {
-  success: boolean;
-  posts: SocialMediaPost[];
-  imageInsights?: ImageInsights;
-  researchInsights?: ResearchInsights;
-  scheduledPosts?: ScheduledPost[];
-  generated_at: string;
-  count: number;
-}
-
-interface WebResearchResponse {
-  success: boolean;
-  data: {
-    query: string;
-    results: Array<{
-      title: string;
-      url: string;
-      snippet: string;
-      publishedDate?: string;
-    }>;
-    insights: string[];
-    generatedAt: string;
-  };
-  timestamp: string;
-}
-
-interface CalendarResponse {
-  success: boolean;
-  calendar: Array<{
-    day: number;
-    date: string;
-    dayName: string;
-    posts: SocialMediaPost[];
-    recommendedTimes: number[];
-  }>;
-  timezone: string;
-  generatedAt: string;
-}
-
-interface ApiError {
-  error: string;
-  message?: string;
-  details?: string[];
-  timestamp: string;
-}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export async function generatePosts(
   product: Product,
   options?: GenerateOptions
 ): Promise<GeneratePostsResponse> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  const response = await fetch(
-    `${apiUrl}/api/generate`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ product, options }),
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/api/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ product, options }),
+  });
 
   if (!response.ok) {
     const errorData: ApiError = await response.json();
     throw new Error(errorData.message || errorData.error || 'Failed to generate posts');
   }
 
-  const data = await response.json();
-  return data;
+  return response.json();
 }
 
 export async function uploadImage(file: File): Promise<ImageInsights> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const formData = new FormData();
   formData.append('image', file);
 
-  const response = await fetch(`${apiUrl}/api/upload-image`, {
+  const response = await fetch(`${API_BASE_URL}/api/upload-image`, {
     method: 'POST',
     body: formData,
   });
@@ -130,8 +53,7 @@ export async function uploadImage(file: File): Promise<ImageInsights> {
 }
 
 export async function performWebResearch(query: string, maxResults: number = 5): Promise<WebResearchResponse> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  const response = await fetch(`${apiUrl}/api/research`, {
+  const response = await fetch(`${API_BASE_URL}/api/research`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -152,8 +74,7 @@ export async function generateContentCalendar(
   startDate?: string,
   timezone: string = 'UTC'
 ): Promise<CalendarResponse> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  const response = await fetch(`${apiUrl}/api/calendar`, {
+  const response = await fetch(`${API_BASE_URL}/api/calendar`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -173,9 +94,8 @@ export async function getOptimalTimes(
   platform: 'twitter' | 'instagram' | 'linkedin',
   timezone: string = 'UTC'
 ): Promise<{ optimalTimes: number[] }> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const response = await fetch(
-    `${apiUrl}/api/optimal-times/${platform}?timezone=${encodeURIComponent(timezone)}`
+    `${API_BASE_URL}/api/optimal-times/${platform}?timezone=${encodeURIComponent(timezone)}`
   );
 
   if (!response.ok) {
@@ -183,6 +103,5 @@ export async function getOptimalTimes(
     throw new Error(errorData.message || errorData.error || 'Failed to get optimal times');
   }
 
-  const data = await response.json();
-  return { optimalTimes: data.optimalTimes };
+  return response.json();
 }
