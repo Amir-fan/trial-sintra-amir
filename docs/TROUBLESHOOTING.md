@@ -1,3 +1,41 @@
+## Environment Variables (Windows)
+
+Symptoms:
+- Backend logs show OPENAI_API_KEY prefix that doesn't match backend-ts/.env
+- Frontend shows "OpenAI API key is invalid or missing"
+
+Root Cause:
+- A User/System environment variable `OPENAI_API_KEY` overrides values from `backend-ts/.env`.
+
+Fix:
+1) Clear overrides in PowerShell
+```
+Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
+[Environment]::SetEnvironmentVariable('OPENAI_API_KEY', $null, 'User')
+# (Admin) [Environment]::SetEnvironmentVariable('OPENAI_API_KEY', $null, 'Machine')
+```
+2) Recreate `.env` clean (ASCII, no BOM)
+```
+Set-Content -Path backend-ts/.env -Value @(
+  'OPENAI_API_KEY=YOUR_KEY',
+  'PORT=3001',
+  'OPENAI_MODEL=gpt-4o',
+  'OPENAI_TEMPERATURE=0.8',
+  'OPENAI_MAX_TOKENS=1000'
+) -Encoding Ascii
+```
+3) Verify
+```
+cd backend-ts
+node -e "const fs=require('fs'),dotenv=require('dotenv');const v=dotenv.parse(fs.readFileSync('.env','utf8')).OPENAI_API_KEY;console.log('from-file:', v? v.slice(0,20)+'...':'<none>')"
+```
+4) Restart backend
+```
+taskkill /f /im node.exe
+npm run dev
+```
+Backend should log the same prefix as your `.env`.
+
 # Troubleshooting Guide
 
 ## Issue: Frontend "Failed to fetch" Error

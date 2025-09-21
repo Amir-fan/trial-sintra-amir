@@ -1,3 +1,6 @@
+2025-09-21
+- Fix: Environment precedence causing wrong key to be used. Implemented robust `.env` loading in `backend-ts/src/server.ts` and `src/openai.ts` to force-read `backend-ts/.env`, sanitize values, and avoid Windows user/system overrides. Added troubleshooting steps and verification commands.
+
 # Development Log
 
 ## Project: Sintra Trial Task - Social Media Post Generator

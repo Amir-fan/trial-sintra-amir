@@ -1,14 +1,51 @@
 import OpenAI from "openai";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
 import { SocialMediaPost } from "./types";
 
 let client: OpenAI | null = null;
 
 function getClient(): OpenAI {
   if (!client) {
-    const apiKey = process.env.OPENAI_API_KEY;
+    // Force reload .env file as fallback
+    require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+    
+    // Prefer the key from backend-ts/.env explicitly, regardless of session/global env
+    const envPath = path.resolve(__dirname, '../.env');
+    // Parse file with robust handling and override env var, to ensure .env wins
+    if (fs.existsSync(envPath)) {
+      try {
+        const raw = fs.readFileSync(envPath);
+        const text = raw.toString('utf8').replace(/^\uFEFF/, '');
+        const parsed = dotenv.parse(text);
+        if (parsed.OPENAI_API_KEY) {
+          process.env.OPENAI_API_KEY = parsed.OPENAI_API_KEY.trim();
+        }
+      } catch {}
+    }
+    let fileKey = '';
+    try {
+      if (fs.existsSync(envPath)) {
+        const contents = fs.readFileSync(envPath, 'utf8');
+        const match = contents.split(/\r?\n/).find(l => l.trim().startsWith('OPENAI_API_KEY='));
+        if (match) {
+          fileKey = match.split('OPENAI_API_KEY=')[1] || '';
+        }
+      }
+    } catch {}
+
+    // Sanitize: remove BOM, quotes, stray whitespace
+    const sanitize = (v: string) => v.replace(/^\uFEFF/, '').replace(/^['"]|['"]$/g, '').trim();
+    const raw = process.env.OPENAI_API_KEY || '';
+    const apiKey = sanitize(fileKey) || sanitize(raw);
     if (!apiKey) {
+      console.error('❌ OPENAI_API_KEY not found in environment variables');
+      console.error('🔍 Available env vars:', Object.keys(process.env).filter(key => key.includes('OPENAI')));
       throw new Error('OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable.');
     }
+    
+    console.log('✅ OpenAI client initialized with API key:', apiKey.substring(0, 20) + '...');
     
     client = new OpenAI({
       apiKey: apiKey,

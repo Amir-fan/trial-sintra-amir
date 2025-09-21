@@ -1,5 +1,54 @@
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+import fs from "fs";
+
+// Robust .env loader: handles UTF-8/UTF-16 encodings and overrides session vars
+const ENV_PATH = path.resolve(__dirname, '../.env');
+function loadEnvRobust(): void {
+  if (!fs.existsSync(ENV_PATH)) return;
+
+  // 1) Try dotenv normally (utf8)
+  try {
+    const textUtf8 = fs.readFileSync(ENV_PATH, 'utf8');
+    const parsed = dotenv.parse(textUtf8);
+    for (const [key, value] of Object.entries(parsed)) {
+      process.env[key] = (value ?? '').trim();
+    }
+  } catch {}
+
+  // 2) Regex fallback to extract OPENAI_API_KEY explicitly (handles BOM/quotes/odd spaces)
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      const raw = fs.readFileSync(ENV_PATH);
+      const text = raw.toString('utf8').replace(/^\uFEFF/, '');
+      const m = text.match(/^\s*OPENAI_API_KEY\s*=\s*(.+)$/m);
+      if (m && m[1]) {
+        const v = m[1].replace(/^['"]|['"]$/g, '').trim();
+        if (v) process.env.OPENAI_API_KEY = v;
+      }
+    }
+  } catch {}
+}
+
+loadEnvRobust();
+
+// Force-set OPENAI_API_KEY from file if present to override any global/session var
+try {
+  if (fs.existsSync(ENV_PATH)) {
+    const text = fs.readFileSync(ENV_PATH, 'utf8').replace(/^\uFEFF/, '');
+    const m = text.match(/^\s*OPENAI_API_KEY\s*=\s*(.+)$/m);
+    if (m && m[1]) {
+      const v = m[1].replace(/^['"]|['"]$/g, '').trim();
+      if (v) process.env.OPENAI_API_KEY = v;
+    }
+  }
+} catch {}
+
+// Debug environment loading
+console.log('🔍 Environment Debug:');
+console.log('🔑 OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
+console.log('🔑 OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+console.log('🔑 OPENAI_API_KEY starts with:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'N/A');
 
 import express, { Request, Response } from "express";
 import cors from "cors";
@@ -12,12 +61,18 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
 // Validate environment variables on startup
 function validateEnvironment() {
   const requiredEnvVars = ['OPENAI_API_KEY'];
-  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-  
+  let missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
   if (missingVars.length > 0) {
-    console.error('❌ Missing required environment variables:', missingVars.join(', '));
-    console.error('Please set the environment variables in your terminal session.');
-    process.exit(1);
+    console.warn('⚠️ Env missing. Attempting to load from .env at:', ENV_PATH);
+    loadEnvRobust();
+    missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  }
+
+  if (missingVars.length > 0) {
+    console.error('❌ Missing required environment variables after .env load:', missingVars.join(', '));
+    console.error('Ensure backend-ts/.env exists and contains OPENAI_API_KEY=...');
+    return; // Do not exit; openai.ts will attempt its own fallback and report clearly
   }
   
   console.log('✅ Environment variables validated successfully');

@@ -88,7 +88,7 @@ A modern web application that transforms product descriptions into engaging soci
 - **Approach**: Iterative development with real-time debugging and UI/UX enhancement
 
 ### Key Challenges Solved
-1. **API Key Management**: Resolved environment variable loading issues
+1. **API Key Management**: Fixed environment variable precedence issues (Windows user/system env overriding .env). Backend now force-reads `backend-ts/.env` and sanitizes values, plus docs include verification steps and clean restart instructions.
 2. **UI/UX Design**: Transformed basic interface to professional 10/10 design
 3. **TypeScript Integration**: Fixed type safety and compilation issues
 4. **Real-time Validation**: Implemented comprehensive form validation
