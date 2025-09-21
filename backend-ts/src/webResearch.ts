@@ -73,10 +73,14 @@ export class WebResearchService {
               .slice(0, 5);
           }
         } catch {
-          // Fallback: split by lines
-          insights = content.split('\n')
-            .filter(line => line.trim().length > 0)
-            .map(line => line.replace(/^\d+\.\s*/, '').trim())
+          // Fallback: split by lines and clean up JSON formatting
+          insights = content
+            .replace(/```json\n?/g, '')
+            .replace(/```\n?/g, '')
+            .split('\n')
+            .filter(line => line.trim().length > 0 && !line.includes('[') && !line.includes(']'))
+            .map(line => line.replace(/^\d+\.\s*/, '').replace(/^["\s]*/, '').replace(/["\s]*$/, '').trim())
+            .filter(line => line.length > 0)
             .slice(0, 5);
         }
       }

@@ -149,7 +149,10 @@ export default function Home() {
         timezone
       };
       
+      console.log('Generating posts with options:', options);
       const result = await generatePosts(product, options);
+      console.log('Generated result:', result);
+      
       setPosts(result.posts);
       setImageInsights(result.imageInsights || null);
       setResearchInsights(result.researchInsights || null);
@@ -157,10 +160,13 @@ export default function Home() {
       
       // Generate content calendar
       if (result.posts.length > 0) {
+        console.log('Generating calendar...');
         const calendarResult = await generateContentCalendar(result.posts, undefined, timezone);
+        console.log('Calendar result:', calendarResult);
         setContentCalendar(calendarResult.calendar);
       }
     } catch (err) {
+      console.error('Error generating posts:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
