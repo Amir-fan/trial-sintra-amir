@@ -25,7 +25,11 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       >
         {isLoading ? (
           <div className="flex items-center justify-center space-x-3">
-            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            <img 
+              src="/images/astronaut-2.png" 
+              alt="Working..." 
+              className="w-8 h-8 animate-spin"
+            />
             <span>Generating Content...</span>
           </div>
         ) : (
