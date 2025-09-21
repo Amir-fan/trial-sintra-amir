@@ -182,10 +182,12 @@ function validateProduct(product: any): { isValid: boolean; errors: string[]; va
 app.post("/api/generate", async (req: Request, res: Response) => {
   try {
     const { product, options } = req.body;
+    console.log('Received generate request:', { product, options });
     
     // Validate input
     const validation = validateProduct(product);
     if (!validation.isValid) {
+      console.log('Validation failed:', validation.errors);
       return res.status(400).json({
         error: 'Validation failed',
         details: validation.errors,
@@ -198,15 +200,19 @@ app.post("/api/generate", async (req: Request, res: Response) => {
       setTimeout(() => reject(new Error('Request timeout')), 30000)
     );
     
-    const postsPromise = generateSocialMediaPosts(validation.validatedProduct!, options || {});
+    const generatePromise = generateSocialMediaPosts(validation.validatedProduct!, options || {});
     
-    const posts = await Promise.race([postsPromise, timeoutPromise]) as any[];
+    const result = await Promise.race([generatePromise, timeoutPromise]) as any;
+    console.log('Generated result:', result);
     
     res.json({
       success: true,
-      posts,
+      posts: result.posts,
+      imageInsights: result.imageInsights,
+      researchInsights: result.researchInsights,
+      scheduledPosts: result.scheduledPosts,
       generated_at: new Date().toISOString(),
-      count: posts.length,
+      count: result.posts.length,
     });
     
   } catch (error) {

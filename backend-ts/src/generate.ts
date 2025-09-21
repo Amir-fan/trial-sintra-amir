@@ -74,10 +74,10 @@ Return the response as a JSON object with this exact structure:
   "posts": [
     { "platform": "twitter", "content": "..." },
     { "platform": "instagram", "content": "..." },
-    { "platform": "linkedin", "content": "..." }
+    { "platform": "linkedin", "content": "..." },
+    { "platform": "twitter", "content": "..." },
+    { "platform": "instagram", "content": "..." }
   ]
-  ${image ? `,"imageInsights": { "altText": "${image.altText}" }` : ""}
-  ${opts.includePlan ? `,"plan": [ { "day": 1, "recommendedTime": "9:00 AM", "posts": [] } ]` : ""}
 }
 
 Make sure each post is unique and tailored to the specific platform's audience and character limits.`;
