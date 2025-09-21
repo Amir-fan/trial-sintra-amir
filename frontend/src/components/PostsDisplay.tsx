@@ -60,7 +60,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
   return (
     <div className="group bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/30 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-      <div className={`p-4 ${PLATFORM_COLORS[post.platform]} rounded-t-2xl`}>
+      <div className={`p-4 ${PLATFORM_COLORS[post.platform]} rounded-t-2xl`} style={{ background: post.platform === 'twitter' ? 'linear-gradient(to right, #1e293b, #0f172a)' : post.platform === 'linkedin' ? 'linear-gradient(to right, #3b82f6, #2563eb)' : undefined }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">

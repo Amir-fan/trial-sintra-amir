@@ -7,9 +7,9 @@ export const PLATFORM_NAMES: Record<Platform, string> = {
 };
 
 export const PLATFORM_COLORS: Record<Platform, string> = {
-  twitter: "bg-gradient-to-r from-gray-900 to-black text-white",
+  twitter: "bg-gradient-to-r from-slate-800 to-slate-900 text-white",
   instagram: "bg-gradient-to-r from-purple-500 to-pink-500 text-white",
-  linkedin: "bg-gradient-to-r from-blue-600 to-blue-700 text-white",
+  linkedin: "bg-gradient-to-r from-blue-500 to-blue-600 text-white",
 };
 
 // Platform icons will be defined in components that use them
