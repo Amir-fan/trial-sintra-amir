@@ -159,7 +159,7 @@ export default function Home() {
                     <img 
                       src="/images/astronaut-1.png" 
                       alt="Soshie AI Assistant" 
-                      className="w-full h-full object-contain animate-bounce"
+                      className="w-full h-full object-contain"
                     />
                     <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center text-lg animate-pulse">
                       ✨

@@ -16,7 +16,7 @@ function validateEnvironment() {
   
   if (missingVars.length > 0) {
     console.error('❌ Missing required environment variables:', missingVars.join(', '));
-    console.error('Please create a .env file with the required variables.');
+    console.error('Please set the environment variables in your terminal session.');
     process.exit(1);
   }
   
