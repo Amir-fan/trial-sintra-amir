@@ -16,7 +16,7 @@ interface EnhancedFeaturesProps {
   isResearching: boolean;
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onWebResearch: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 export const EnhancedFeatures: React.FC<EnhancedFeaturesProps> = ({
