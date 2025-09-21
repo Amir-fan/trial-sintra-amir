@@ -1,7 +1,7 @@
-import { callOpenAI } from "./openai";
 import { Product, SocialMediaPost, GenerateOptions, ImageInsights, ResearchInsights, GenerateResponse, WebResearchData } from "./types";
-import { WebResearchService } from "./webResearch";
-import { SchedulingService } from "./scheduling";
+import { OpenAIService } from "./services/OpenAIService";
+import { WebResearchService } from "./services/WebResearchService";
+import { SchedulingService } from "./services/SchedulingService";
 
 const POST_COUNT = 5;
 
@@ -16,8 +16,8 @@ export async function generateSocialMediaPosts(
   // Process image if provided
   if (options.imageBase64 && options.imageMimeType) {
     try {
-      const { analyzeImage } = await import('./openai');
-      imageInsights = await analyzeImage(options.imageBase64, options.imageMimeType);
+      const openaiService = new OpenAIService(process.env.OPENAI_API_KEY || '');
+      imageInsights = await openaiService.analyzeImage(options.imageBase64, options.imageMimeType);
     } catch (error) {
       console.error('Image analysis failed:', error);
     }
@@ -39,7 +39,8 @@ export async function generateSocialMediaPosts(
 
   // Build enhanced prompt with all available data
   const prompt = buildPrompt(product, options, imageInsights, researchInsights);
-  const posts = await callOpenAI(prompt);
+  const openaiService = new OpenAIService(process.env.OPENAI_API_KEY || '');
+  const posts = await openaiService.generatePosts(prompt);
 
   // Create scheduling if requested
   let scheduledPosts;
