@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import { OpenAIService } from '../services/OpenAIService';
+import { analyzeImage } from '../openai';
 import { defaultRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
@@ -37,8 +37,7 @@ router.post('/image',
       const { buffer, mimetype } = req.file;
       const base64 = buffer.toString('base64');
       
-      const openaiService = new OpenAIService(process.env.OPENAI_API_KEY || '');
-      const insights = await openaiService.analyzeImage(base64, mimetype);
+      const insights = await analyzeImage(base64, mimetype);
       
       res.json({
         success: true,
