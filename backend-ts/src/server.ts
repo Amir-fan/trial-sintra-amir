@@ -37,7 +37,21 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req: Request, res: Response) => {
-  res.json({ hello: "world", timestamp: new Date().toISOString() });
+  res.json({ 
+    hello: "world", 
+    timestamp: new Date().toISOString(),
+    status: "healthy",
+    api_key_configured: !!process.env.OPENAI_API_KEY
+  });
+});
+
+app.get("/health", (req: Request, res: Response) => {
+  res.json({ 
+    status: "healthy", 
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    api_key_configured: !!process.env.OPENAI_API_KEY
+  });
 });
 
 // Input validation function
@@ -153,6 +167,7 @@ app.post("/api/generate", async (req: Request, res: Response) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server also accessible on http://0.0.0.0:${PORT}`);
 });
