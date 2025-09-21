@@ -7,8 +7,10 @@ export class OpenAIService {
 
   constructor(apiKey: string) {
     if (!apiKey) {
+      console.error('OpenAI API key is missing');
       throw new Error('OpenAI API key is required');
     }
+    console.log('OpenAIService initialized with API key:', apiKey.substring(0, 10) + '...');
     this.apiKey = apiKey;
   }
 
@@ -50,6 +52,9 @@ export class OpenAIService {
 
   async analyzeImage(imageBase64: string, mimeType: string): Promise<ImageInsights> {
     try {
+      console.log('Starting image analysis with mimeType:', mimeType);
+      console.log('Image base64 length:', imageBase64.length);
+      
       const response = await axios.post(
         `${this.baseUrl}/chat/completions`,
         {
@@ -83,14 +88,21 @@ export class OpenAIService {
         }
       );
 
+      console.log('OpenAI API response status:', response.status);
       const content = response.data.choices[0]?.message?.content;
       if (!content) {
+        console.error('No content in OpenAI response:', response.data);
         throw new Error('No image analysis generated');
       }
 
+      console.log('Image analysis content received:', content.substring(0, 100) + '...');
       return this.parseImageAnalysis(content);
     } catch (error) {
-      console.error('Image analysis error:', error);
+      console.error('Image analysis error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        response: error instanceof Error && 'response' in error ? (error as any).response?.data : undefined,
+        status: error instanceof Error && 'response' in error ? (error as any).response?.status : undefined
+      });
       throw new Error('Failed to analyze image');
     }
   }

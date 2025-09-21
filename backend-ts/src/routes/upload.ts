@@ -48,6 +48,11 @@ router.post('/image',
       
     } catch (error) {
       console.error('Image upload error:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : undefined
+      });
       
       if (error instanceof Error && error.message.includes('Only image files')) {
         return res.status(400).json({
@@ -61,7 +66,7 @@ router.post('/image',
       res.status(500).json({
         success: false,
         error: 'Image analysis failed',
-        message: 'An unexpected error occurred while analyzing the image.',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred while analyzing the image.',
         timestamp: new Date().toISOString()
       });
     }

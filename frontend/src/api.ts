@@ -38,7 +38,7 @@ export async function uploadImage(file: File): Promise<ImageInsights> {
   const formData = new FormData();
   formData.append('image', file);
 
-  const response = await fetch(`${API_BASE_URL}/api/upload-image`, {
+  const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
     method: 'POST',
     body: formData,
   });
