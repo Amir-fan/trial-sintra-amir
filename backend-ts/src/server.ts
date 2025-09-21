@@ -21,6 +21,9 @@ function validateEnvironment() {
   }
   
   console.log('✅ Environment variables validated successfully');
+  console.log('🔑 API Key loaded:', process.env.OPENAI_API_KEY ? 'YES' : 'NO');
+  console.log('🔑 API Key length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
+  console.log('🔑 API Key starts with:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'N/A');
 }
 
 // Validate environment on startup
@@ -167,7 +170,34 @@ app.post("/api/generate", async (req: Request, res: Response) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Server also accessible on http://0.0.0.0:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server also accessible on http://0.0.0.0:${PORT}`);
+  console.log(`✅ Health check available at http://localhost:${PORT}/health`);
+  console.log(`✅ API endpoint available at http://localhost:${PORT}/api/generate`);
+});
+
+// Handle server errors
+server.on('error', (error: any) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use. Please kill the process using this port.`);
+  } else {
+    console.error('❌ Server error:', error);
+  }
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('✅ Process terminated');
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('🛑 SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('✅ Process terminated');
+  });
 });

@@ -2,7 +2,7 @@
 const http = require('http');
 
 const options = {
-  hostname: 'localhost',
+  hostname: '127.0.0.1',  // Use IPv4 explicitly
   port: 3001,
   path: '/health',
   method: 'GET'
